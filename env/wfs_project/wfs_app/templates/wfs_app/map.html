@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div id="mapid" style="height: 500px;"></div>
+  <script>
+    // Create the Leaflet map
+    var mymap = L.map('mapid').setView([48.77, 9.17], 13);
+
+    // Add the OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: 'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+      maxZoom: 19,
+    }).addTo(mymap);
+
+    // Make an AJAX request to the WFS data endpoint
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/wfs-data/');
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        var data = JSON.parse(xhr.responseText);
+
+        // Define the WFS GeoJSON layer
+        var wfsLayer = L.geoJSON(data, {
+          pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, {
+              radius: 6,
+              fillColor: "#ff7800",
+              color: "#000",
+              weight: 1,
+              opacity: 1,
+              fillOpacity: 0.8,
+            });
+          },
+          onEachFeature: function (feature, layer) {
+            layer.bindPopup(feature.properties.stationName);
+          },
+        }).addTo(mymap);
+
+        // Fit the map bounds to the WFS data
+        mymap.fitBounds(wfsLayer.getBounds());
+      }
+    };
+    xhr.send();
+  </script>
+{% endblock %}
